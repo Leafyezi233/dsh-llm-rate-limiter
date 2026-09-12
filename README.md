@@ -44,8 +44,18 @@ pnpm add ./path/to/dsh-llm-rate-limiter
 ### Option 3: from GitHub
 
 ```bash
-dsh plugin add <your-profile> github:<owner>/dsh-llm-rate-limiter
+dsh plugin add <your-profile> github:Leafyezi233/dsh-llm-rate-limiter
 ```
+
+> ⚠️ **Important**: Git-hosted plugins are blocked by pnpm's `allowBuilds` restriction on first install. If the install fails, check the error message for the exact key pnpm suggests, then add it to your profile's `pnpm-workspace.yaml`:
+>
+> ```yaml
+> pnpm:
+>   allowBuilds:
+>     - dsh-llm-rate-limiter
+> ```
+>
+> Then re-run the install command.
 
 ---
 
@@ -141,7 +151,7 @@ Agent Turn
 
 ```bash
 # Clone
-git clone github:<owner>/dsh-llm-rate-limiter
+git clone https://github.com/Leafyezi233/dsh-llm-rate-limiter.git
 cd dsh-llm-rate-limiter
 
 # Install deps

@@ -25,12 +25,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/<YOUR_GITHUB_USERNAME>/dsh-llm-rate-limiter.git"
+    "url": "https://github.com/Leafyezi233/dsh-llm-rate-limiter.git"
   },
   "bugs": {
-    "url": "https://github.com/<YOUR_GITHUB_USERNAME>/dsh-llm-rate-limiter/issues"
+    "url": "https://github.com/Leafyezi233/dsh-llm-rate-limiter/issues"
   },
-  "homepage": "https://github.com/<YOUR_GITHUB_USERNAME>/dsh-llm-rate-limiter#readme",
+  "homepage": "https://github.com/Leafyezi233/dsh-llm-rate-limiter#readme",
   "keywords": [
     "dsh",
     "deepseek-harness",
