@@ -17,8 +17,38 @@ Per-model LLM call rate limiter for [DeepSeek Harness](https://github.com/deepse
 - **Queue mode** — throttled requests wait in queue and are released when a slot opens
 - **Reject mode** — throttled requests fail immediately (integrates with `dsh-llm-retry` for auto-backoff)
 - **Interactive GUI** — collapsible card in DSH Settings → Plugins → Configurable
+- **Live status panel** — real-time counters, per-model progress bars and an event log (v0.2.0)
 - **Hot-reload** — settings changes take effect immediately, no restart needed
 - **Every request checked** — intercepts `llm/stream` waterfall, covering every LLM call in every agent turn
+
+---
+
+## Status Panel (v0.2.0)
+
+Expanding the card shows a live panel at the top of its body:
+
+```
+📊 实时状态                          ● 实时   [清零]
+ 请求 42 · 通过 38 · 拒绝 2 · 超时 1 · 中止 1 · 平均等待 214ms
+ deepseek/deepseek-chat   [令牌桶]  ▓▓▓▓▓▓▓░░░ 7.5/10   并发 2/5   排队 1
+ openai/gpt-4o            [滑动窗口] ▓▓▓▓▓▓▓▓▓▓ 3/3 rpm  并发 1/5
+ 12:00:03  timeout   openai/gpt-4o              等待 1m
+ 12:00:01  rejected  openai/gpt-4o
+ 12:00:00  granted   deepseek/deepseek-chat     等待 4.2s
+```
+
+| Aspect | Behaviour |
+|--------|-----------|
+| Data channel | Framework `connection.rpc` channel `/llm-rate-limiter` — authenticated (401/403 fence), POST+JSON, auto-cleaned with the plugin fiber |
+| Cadence | 1 s polling while the card is expanded; backs off 2 s → 4 s → 8 s after failures |
+| Collapsed card | The panel unmounts, so **no polling runs at all** |
+| Endpoints | `snapshot` (live counters) and `reset` (zero the statistics) |
+| Without a channel | Shows "状态通道不可用" and leaves the rest of the card fully functional |
+| Counters | `requests` / `granted` / `rejected` / `timeouts` / `aborted` / `totalWaitMs`, plus the last 8 events (ring buffer of 64) |
+| Progress bars | Token bucket shows `tokens/burstSize`; sliding window shows `countInWindow/maxRpm`; both turn amber as the limit approaches |
+
+> 🧠 **From Hindsight memory (dsh-context-host-client)** — the channel idiom is dsh-context's: `ctx.inject(["connection"])` → `conn.rpc.handle(channel, handler)`, with the browser side resolving `ctx.get("connection")?.rpc.call` defensively so a missing service degrades instead of throwing.
+
 
 ---
 

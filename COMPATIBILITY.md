@@ -30,6 +30,19 @@
 | 5 | `settingsScope.mutate([{ op, path, value }])` | dsh-client-ui-settings | ✅ 1处 | SettingsScopeController.mutate (嵌套操作) |
 | 6 | `ctx.slots.inject("settings.plugin.item", ...)` | dsh-client-ui-settings-plugins | ✅ 6处 | 插件设置卡片注册 slot |
 
+### v0.2.0 新增依赖（状态通道）
+
+| # | API | 所属包 | 本地存在 | 稳定性评估 |
+|---|-----|--------|----------|------------|
+| 1 | `ctx.inject(["connection"], cb)` + `conn.rpc.handle(channel, handler)` | dsh-client-connection | ✅ `HostConnectionService.register`（lib/index.js 572-589） | **公开通用 API**；注册包在 `owner.effect` 中，卸载自动撤通道。通道名须匹配 `/^\/[A-Za-z0-9._~-]+$/` 且非 `/api` |
+| 2 | handler 签名 `(endpoint, payload, signal) => envelope` | dsh-client-connection | ✅ `rpcFetchHandler`（605-631） | 框架强制 POST + `application/json`（否则 404/415），并自动套 `requestRejection`（Host/Origin 不信→403，未认证→401） |
+| 3 | envelope `{ok:true,value}` / `{ok:false,error:{code,message,details}}` | dsh-client-connection | ✅ 与 `clientRequestSchema` / `errorResponse` 一致 | 契约字面量，dsh-context 逐字复制同一范式 |
+| 4 | 客户端 `ctx.get("connection")?.rpc.call(channel, endpoint, payload, signal)` | dsh-client-connection | ✅ `createWebConnectionRpc.call`（client.js 4606-4628） | 传输失败 reject；返回 `result`（即 envelope）。经 `rpcCallOf` 反射读取，服务缺席/敌意时降级为 `undefined` |
+| 5 | `dsh.client.inject` 声明 `@deepseek-ai/dsh-client-connection` | DSH web shell | ✅ | bundle 依赖声明，确保连接服务先于本插件可用；**不放进模块级 `inject`**，以便服务缺席时面板降级而非整卡不加载 |
+| 6 | `dsh.compatibility.dshReleases` 声明 | DSH 打包约定 | ✅ 对齐 `dsh-context` | 成熟插件物料约定 |
+
+> 证据：dsh-context v0.50.0 使用同一组 API（`watchDetailChannel`，lib/index.js 1943-2012），其 compatibility 矩阵覆盖 DSH `0.1.2-rc.1` → `0.1.5-rc.1`，说明 `connection.rpc` 是**持久公开契约**而非临时接口。
+
 ### Schema 依赖 — 1 个包
 
 | 包 | 本地版本 | 用到的 API |
@@ -130,4 +143,8 @@
    - [ ] `settings.register` 返回值结构是否变化
    - [ ] `settingsScope.set/mutate` 接口是否变化
    - [ ] `settings.plugin.item` slot 是否仍可注入
+   - [ ] **状态通道（v0.2.0）**：`connection.rpc.handle` 仍为公开 API 且通道名规则未变
+   - [ ] **状态通道（v0.2.0）**：`snapshot` / `reset` 端点往返成功（面板显示"● 实时"而非"状态通道不可用"）
+   - [ ] **状态通道（v0.2.0）**：折叠卡片后 DevTools Network 无 `/llm-rate-limiter/snapshot` 轮询
+   - [ ] **状态通道（v0.2.0）**：无 connection 服务的组合下，卡片配置区仍可用且面板显示降级文案
 4. **如果 cordis 升级到 5.0+**：整个 `apply(ctx)` 接口、`ctx.effect()`、`ctx.on()` 签名可能重写，需要全面适配

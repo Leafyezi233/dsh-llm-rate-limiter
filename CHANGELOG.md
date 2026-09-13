@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.2.0] - 2026-09-13
+
+### Added
+- **Live status panel** in the settings card: request/granted/rejected/timeout/aborted counters, average wait, per-model progress bars (token balance or window occupancy), concurrency and queue badges, and a rolling event log
+- **`connection.rpc` status channel** at `/llm-rate-limiter` with `snapshot` and `reset` endpoints — the framework supplies POST+JSON transport, the Host/Origin fence (403) and browser authentication (401), and withdraws the channel with the plugin fiber
+- **"清零" button** that zeroes all statistics and drops retained events
+- `lib/status-rpc.js` — channel handler and envelope helpers (`success` / `failure`)
+- `test-status-rpc.mjs` (61 assertions): envelopes, endpoint routing, JSON-safety, ring-buffer bounds, every counter path
+- `test-client-bundle.mjs` (70 assertions): loads the real client bundle in a VM and mounts the card and panel on a miniature React runtime — covers live rendering, collapse-stops-polling, and every degraded phase
+
+### Changed
+- `dsh.client.inject` now also requires `@deepseek-ai/dsh-client-connection`, so the connection service is available before the panel mounts
+- `dsh.compatibility.dshReleases` declares the verified DSH release (aligned with dsh-context's convention)
+- CI runs the two new suites and syntax-checks `lib/status-rpc.js`
+
+### Notes
+- The status channel is optional: on a host without a connection service it is never registered and the panel shows "状态通道不可用" instead, leaving configuration untouched
+- Statistics are in-memory only and reset when the host restarts
+
 ## [0.1.1] - 2026-09-12
 
 ### Changed

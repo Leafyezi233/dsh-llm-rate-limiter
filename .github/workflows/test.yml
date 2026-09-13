@@ -32,8 +32,20 @@ jobs:
       - name: Run unit tests
         run: node test-strategies.mjs
 
+      - name: Run status channel tests
+        run: node test-status-rpc.mjs
+
+      - name: Run client bundle tests
+        run: node test-client-bundle.mjs
+
+      - name: Run host integration tests
+        run: node test-host-integration.mjs
+
       - name: Check syntax (host)
         run: node --check lib/index.js
+
+      - name: Check syntax (status rpc)
+        run: node --check lib/status-rpc.js
 
       - name: Check syntax (client)
         run: node --check lib/client.js
