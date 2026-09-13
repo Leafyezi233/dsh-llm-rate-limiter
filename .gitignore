@@ -1,9 +1,6 @@
 # Dependencies
 node_modules/
 
-# Lock file (pnpm — may conflict with user's pnpm version)
-pnpm-lock.yaml
-
 # Logs
 *.log
 npm-debug.log*
