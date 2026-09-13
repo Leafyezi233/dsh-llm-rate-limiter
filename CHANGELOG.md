@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.1] - 2026-09-12
+
+### Changed
+- **Package renamed to `@leaf233/dsh-llm-rate-limiter`** (npm scope) and published to npm; the internal plugin identity (`llm-rate-limiter`), settings namespace, and runtime behavior are unchanged
+- `cordis.patch.yml` `name` and the browser client bundle id now follow the scoped package name (required by DSH module resolution)
+- npm badge and npm install instructions added to README
+
+### Fixed (since the `v0.1.0` git tag)
+- CI: `pnpm/action-setup` now precedes `actions/setup-node` (pnpm was missing from PATH)
+- CI: `pnpm-lock.yaml` committed, so `--frozen-lockfile` installs work
+- Removed private `@deepseek-ai/dsh-llm` from `peerDependencies` (unresolvable for consumers)
+
 ## [0.1.0] - 2026-09-12
 
 ### Added

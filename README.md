@@ -1,5 +1,6 @@
 # dsh-llm-rate-limiter
 
+[![npm](https://img.shields.io/npm/v/@leaf233/dsh-llm-rate-limiter.svg)](https://www.npmjs.com/package/@leaf233/dsh-llm-rate-limiter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![DSH 0.1.x](https://img.shields.io/badge/DSH-0.1.x-brightgreen.svg)](COMPATIBILITY.md)
 [![Cordis 4.x](https://img.shields.io/badge/Cordis-%3E%3D4.0.2-brightgreen.svg)](package.json)
@@ -23,19 +24,20 @@ Per-model LLM call rate limiter for [DeepSeek Harness](https://github.com/deepse
 
 ## Installation
 
-### Option 1: DSH CLI (recommended)
+### Option 1: npm (recommended)
+
+```bash
+dsh plugin add <your-profile> @leaf233/dsh-llm-rate-limiter
+# or, inside the profile directory:
+pnpm add @leaf233/dsh-llm-rate-limiter
+```
+
+### Option 2: local path (development)
 
 ```bash
 dsh plugin add <your-profile> ./path/to/dsh-llm-rate-limiter
 # or
 dsh plugin add ./path/to/dsh-llm-rate-limiter   # default profile
-```
-
-### Option 2: pnpm (manual)
-
-```bash
-cd <DSH_HOME>/profiles/<your-profile>
-pnpm add ./path/to/dsh-llm-rate-limiter
 ```
 
 > The plugin must be added as a dependency in the profile's `package.json`.
@@ -52,7 +54,7 @@ dsh plugin add <your-profile> github:Leafyezi233/dsh-llm-rate-limiter
 > ```yaml
 > pnpm:
 >   allowBuilds:
->     - dsh-llm-rate-limiter
+>     - '@leaf233/dsh-llm-rate-limiter'
 > ```
 >
 > Then re-run the install command.
