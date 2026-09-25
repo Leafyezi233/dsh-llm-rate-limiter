@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![DSH 0.1.x](https://img.shields.io/badge/DSH-0.1.x-brightgreen.svg)](COMPATIBILITY.md)
 [![Cordis 4.x](https://img.shields.io/badge/Cordis-%3E%3D4.0.2-brightgreen.svg)](package.json)
-[![Tests](https://img.shields.io/badge/tests-19%2F19%20passing-brightgreen.svg)](test-strategies.mjs)
+[![Tests](https://img.shields.io/badge/tests-300%20passing-brightgreen.svg)](test-status-route.mjs)
 
 Per-model LLM call rate limiter for [DeepSeek Harness](https://github.com/deepseek-ai/dsh) with queue/reject support and interactive GUI configuration.
 
@@ -39,7 +39,8 @@ Expanding the card shows a live panel at the top of its body:
 
 | Aspect | Behaviour |
 |--------|-----------|
-| Data channel | Framework `connection.rpc` channel `/llm-rate-limiter` — authenticated (401/403 fence), POST+JSON, auto-cleaned with the plugin fiber |
+| Data channel | Channel `/llm-rate-limiter` — authenticated (401/403 fence), POST+JSON, auto-cleaned with the plugin fiber |
+| Carrier | Prefers the framework's `connection.rpc.handle()`; falls back to a self-registered prefix route that reuses `connection.requestRejection()` when the framework path is broken (see below) |
 | Cadence | 1 s polling while the card is expanded; backs off 2 s → 4 s → 8 s after failures |
 | Collapsed card | The panel unmounts, so **no polling runs at all** |
 | Endpoints | `snapshot` (live counters) and `reset` (zero the statistics) |
@@ -48,6 +49,30 @@ Expanding the card shows a live panel at the top of its body:
 | Progress bars | Token bucket shows `tokens/burstSize`; sliding window shows `countInWindow/maxRpm`; both turn amber as the limit approaches |
 
 > 🧠 **From Hindsight memory (dsh-context-host-client)** — the channel idiom is dsh-context's: `ctx.inject(["connection"])` → `conn.rpc.handle(channel, handler)`, with the browser side resolving `ctx.get("connection")?.rpc.call` defensively so a missing service degrades instead of throwing.
+
+### Carrier fallback (DSH 0.1.5-rc.3)
+
+DSH 0.1.5-rc.3 changed `@deepseek-ai/dsh-client-connection`'s own `inject` from
+`["webServer", "credentials"]` to `["credentials"]`, but its
+`HostConnectionService.register()` still dereferences `owner.webServer`.
+Cordis rebinds a cross-fiber service's `ctx` to the *reader's* fiber, so
+`connection.rpc.handle()` throws:
+
+```
+cannot get property "webServer" without inject
+```
+
+The plugin now detects that and mounts the same channel itself:
+
+| Path | When | How |
+|------|------|-----|
+| 1 (preferred) | `connection.rpc.handle()` works | The framework owns the route, request validation, and fiber-scoped withdrawal |
+| 2 (fallback) | Path 1 throws | The plugin registers a `kind: "prefix"` route on its own fiber (which *can* see `webServer`) and reuses `connection.requestRejection()` for the 403/401 fence |
+
+Both carriers speak the identical wire protocol, so **the browser half is
+unchanged** — the panel cannot tell which one is live. If
+`connection.requestRejection()` is unavailable, the plugin refuses to mount
+rather than publishing an unauthenticated route.
 
 
 ---
@@ -189,8 +214,18 @@ cd dsh-llm-rate-limiter
 # Install deps
 pnpm install
 
-# Run tests (19 tests)
-node test-strategies.mjs
+# Run the full suite (300 assertions across 5 files)
+pnpm test
+
+# Individual suites
+node test-strategies.mjs       # 19 — rate-limit algorithms
+node test-status-rpc.mjs       # 61 — channel handler + counters
+node test-client-bundle.mjs    # 70 — real client bundle on a miniature React runtime
+node test-host-integration.mjs # 77 — real apply() wiring
+node test-status-route.mjs     # 73 — self-registered route + the 0.1.5 regression
+
+# Live HTTP proof against a real DSH install (real socket, real webserver)
+pnpm run verify:live           # 19 — exits 2 (skipped) when DSH is absent
 
 # Run E2E rate-limit test
 node test-3rpm.mjs
@@ -207,7 +242,8 @@ The plugin uses a live symlink when installed via `link:` — edits to `lib/` ta
 
 | DSH Version | Status | Notes |
 |-------------|--------|-------|
-| 0.1.x (RC) | ✅ Tested | Verified against 0.1.2-rc.1, cordis 4.0.2 |
+| 0.1.2-rc.1 | ✅ Tested | Original target; `connection.rpc` carrier |
+| 0.1.5-rc.3 | ✅ Tested | Requires the carrier fallback (see above); verified over real HTTP |
 | 0.2.x | ⚠️ Untested | May need API adjustments |
 | Cordis 5+ | ⚠️ Untested | Major version change likely requires rewrite |
 

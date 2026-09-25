@@ -46,7 +46,7 @@ catch (err) { check("client bundle resolves", false, `${err.code}: ${err.message
 console.log("\n[metadata] what the framework reads");
 const pkg = JSON.parse(readFileSync(join(WORKSPACE, "package.json"), "utf8"));
 check("package name is scoped", pkg.name === SCOPED, pkg.name);
-check("version is 0.2.0", pkg.version === "0.2.0", pkg.version);
+check("version is 0.2.1", pkg.version === "0.2.1", pkg.version);
 check("dsh.client.platform = web", pkg.dsh?.client?.platform === "web");
 check("client bundle dependency declared",
   pkg.dsh?.client?.inject?.includes("@deepseek-ai/dsh-client-connection"),
@@ -56,6 +56,9 @@ check("settings bundle dependency declared",
 check("compatibility release declared",
   pkg.dsh?.compatibility?.dshReleases !== undefined,
   JSON.stringify(pkg.dsh?.compatibility));
+check("0.1.5-rc.3 declared compatible",
+  pkg.dsh?.compatibility?.dshReleases?.["0.1.5-rc.3"] === "compatible",
+  JSON.stringify(pkg.dsh?.compatibility?.dshReleases));
 check("exports[./client] declared", typeof pkg.exports?.["./client"] === "string");
 check("patch declared", pkg.dsh?.bundle?.patch === "./cordis.patch.yml");
 
@@ -78,6 +81,15 @@ try {
   const statusRpc = await import(new URL(`file:///${join(WORKSPACE, "lib", "status-rpc.js").replace(/\\/g, "/")}`).href);
   check("status channel constant exported", statusRpc.CHANNEL === "/llm-rate-limiter", statusRpc.CHANNEL);
   check("channel name passes the framework pattern", /^\/[A-Za-z0-9._~-]+$/.test(statusRpc.CHANNEL));
+  // v0.2.1 fallback carrier surface (the DSH 0.1.5-rc.3 regression fix).
+  check("createChannelRoute exported", typeof statusRpc.createChannelRoute === "function");
+  check("endpointFromPath exported", typeof statusRpc.endpointFromPath === "function");
+  const fallbackRoute = statusRpc.createChannelRoute({
+    channel: statusRpc.CHANNEL, handler: async () => ({ ok: true, value: {} }), reject: () => undefined,
+  });
+  check("fallback route is a prefix route on the channel",
+    fallbackRoute.kind === "prefix" && fallbackRoute.path === statusRpc.CHANNEL,
+    `${fallbackRoute.kind} ${fallbackRoute.path}`);
 } catch (err) {
   check("host module imports", false, err.message.split("\n")[0]);
 }

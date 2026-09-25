@@ -1,6 +1,6 @@
 {
   "name": "@leaf233/dsh-llm-rate-limiter",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Per-model LLM call rate limiter for DeepSeek Harness with queue support and a live status panel",
   "type": "module",
   "main": "lib/index.js",
@@ -21,13 +21,15 @@
     },
     "compatibility": {
       "dshReleases": {
-        "0.1.2-rc.1": "compatible"
+        "0.1.2-rc.1": "compatible",
+        "0.1.5-rc.3": "compatible"
       }
     }
   },
   "scripts": {
     "build": "echo 'no build needed'",
-    "test": "node test-strategies.mjs"
+    "test": "node test-strategies.mjs && node test-status-rpc.mjs && node test-client-bundle.mjs && node test-host-integration.mjs && node test-status-route.mjs",
+    "verify:live": "node tools/verify-live-route.mjs"
   },
   "repository": {
     "type": "git",

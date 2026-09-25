@@ -41,6 +41,9 @@ jobs:
       - name: Run host integration tests
         run: node test-host-integration.mjs
 
+      - name: Run status route regression tests
+        run: node test-status-route.mjs
+
       - name: Check syntax (host)
         run: node --check lib/index.js
 

@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.2.1] - 2026-09-25
+
+### Fixed
+- **Live status panel stopped working on DSH 0.1.5-rc.3** — the channel silently failed to mount and the panel sat on "○ 重试中" forever. Root cause is upstream: DSH 0.1.5-rc.3 changed `@deepseek-ai/dsh-client-connection`'s own `inject` from `["webServer", "credentials"]` to `["credentials"]`, while `HostConnectionService.register()` still dereferences `owner.webServer`. Cordis rebinds a cross-fiber service's `ctx` to the *reader's* fiber, so `connection.rpc.handle()` threw `cannot get property "webServer" without inject` — which the plugin's own try/catch swallowed.
+- The plugin now falls back to a **self-registered `kind: "prefix"` route** on its own fiber (which can see `webServer`) and reuses `connection.requestRejection()` for the 403/401 fence. Both carriers speak the identical wire protocol, so **`lib/client.js` is unchanged**.
+
+### Added
+- `createChannelRoute({ channel, handler, reject })` and `endpointFromPath()` in `lib/status-rpc.js` — a Connection-RPC-compatible webserver prefix route, mirroring the framework's `rpcFetchHandler` request-shape decisions (404 / 415 / 413 / 400 / `gateway/bad-request` / 500 / 200)
+- `test-status-route.mjs` (73 assertions) in four layers: route grammar, request-shape decisions, a simulated 0.1.5 regression (proves both the fallback *and* the preference for `rpc.handle` when it works), and the real 0.1.5 package (auto-skips when DSH is absent)
+- `tools/verify-live-route.mjs` (19 assertions) — boots the real `dsh-host-webserver` on a real socket plus the real `dsh-client-connection`, then issues real HTTP requests; exits 2 (skipped) without a DSH install
+- `pnpm run verify:live` script
+
+### Changed
+- `dsh.compatibility.dshReleases` now declares `0.1.5-rc.3` as compatible alongside `0.1.2-rc.1`
+- The status channel's mount log now names the active carrier (`connection.rpc` vs `self-registered route`), and a failed path-1 registration is reported as a warning instead of being swallowed
+- If `connection.requestRejection()` is unavailable or throws, the plugin **refuses to mount** rather than publishing an unauthenticated route
+
+### Notes
+- Path 1 (`connection.rpc.handle`) is still preferred: it keeps route ownership, request validation, and withdrawal with the framework. The fallback exists only for hosts where path 1 is broken.
+- When DSH fixes the upstream `inject` mismatch, path 1 succeeds again and the fallback goes unused — no plugin change required.
+- Verified on: DSH `0.1.5-rc.3` (client-connection 0.1.5-rc.3, host-webserver 0.1.5-rc.3), Cordis 4.0.2, Node 24.21.0. Test totals: 19 + 61 + 70 + 77 + 73 = **300 assertions**, plus 31 in `tools/verify-install.mjs` and 19 in `tools/verify-live-route.mjs`. Producer: **deepseek-v4.1-flash**.
+
 ## [0.2.0] - 2026-09-13
 
 ### Added
